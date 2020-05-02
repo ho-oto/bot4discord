@@ -70,6 +70,16 @@ async def on_message(message):
         for k, v in alias.items():
             s += '{} => {}\n'.format(k, v)
         await message.channel.send(s)
+    if message.content.startswith('!!!ra'):
+        args = message.content.split(" ")
+        if len(args) != 2:
+            return
+        try:
+            k = str(args[1])
+            v = alias.pop(k)
+            await message.channel.send('Alias removed: {} => {}'.format(k, v))
+        except KeyError:
+            return
     if message.content == '!!!help':
         s = '{} に'\
             '置いてある画像を表示するbot。真面目に作ってないのでBox内に画像以外'\
@@ -83,6 +93,7 @@ async def on_message(message):
             '多分Boxの中のファイル名を弄ったほうがはやい。\n'\
             '    `!!!pa name` : エイリアスを使って表示。\n'\
             '    `!!!la` : 登録されてるエイリアスを一覧表示する。\n'\
+            '    `!!!ra key` : エイリアスを削除する。\n'\
             '    `!!!help` : これを表示する。'.format(os.environ['BOX_URL'])
         await message.channel.send(s)
 
