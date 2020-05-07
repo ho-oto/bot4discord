@@ -31,7 +31,7 @@ if not uploaddir.exists():
 async def on_message(message):
     if message.author.bot:
         return
-    if message.content == '!!!p':
+    if message.content in ['!!!', '!!!p', '!!!picture']:
         items = list(folder.get_items())
         if len(items) == 0:
             return
@@ -43,7 +43,7 @@ async def on_message(message):
             'name = {}, id = {}'.format(item.name, item.id),
             file=discord.File(item_save)
         )
-    if message.content.startswith('!!!p '):
+    if message.content.startswith(('!!! ', '!!!p ', '!!!picture ')):
         for search_query in message.content.split(" ")[1:]:
             items = list(client_box.search().query(query=search_query))
             if len(items) == 0:
@@ -120,8 +120,8 @@ async def on_message(message):
     if message.content == '!!!help':
         s = '{} に置いてある画像を表示するbot\n'\
             '使い方\n'\
-            '    `!!!p` : Boxの中からランダムな画像を表示\n'\
-            '    `!!!p name` : Boxの中をnameで検索してヒットしたものを表示'\
+            '    `!!!`, `!!!p`, `!!!picture` : Boxの中からランダムな画像を表示\n'\
+            '    `!!! name` : Boxの中をnameで検索してヒットしたものを表示'\
             'する。スペース区切りで複数指定すると順番に表示する。\n'\
             '    `!!!list` : 画像リストのURLを表示する\n'\
             '    `!!!upload` : 画像をアップロードする。jpg, jpeg, png, gifのみ\n'\
