@@ -68,16 +68,20 @@ async def on_message(message):
                     )
                 else:
                     await message.channel.send(
-                        '{} was uploaded. ID = {}'.format(
+                        '{} was uploaded. file_id = {}'.format(
                             newfile.name, newfile.id
                         ))
     if message.content.startswith('!!!delete'):
-        fileid = message.content.split(' ')[1]
-        resp = client_box.file(file_id=fileid).delete()
-        if resp is None:
-            await message.channel.send(
-                'file with ID = {} was deleted'.format(fileid)
-            )
+        for fileid in message.content.split(' ')[1:]:
+            response = client_box.file(file_id=fileid).delete()
+            if response is None:
+                await message.channel.send(
+                    'file with file_id = {} was deleted.'.format(fileid)
+                )
+            else:
+                s = 'failed to remove file with file_id = {}. NOTE: '\
+                    'file_id is not file name. check !!!help'.format(fileid)
+                await message.channel.send(s)
     if message.content.startswith('!!!rename'):
         if len(message.content.split(' ')) == 3:
             fileid = message.content.split(' ')[1]
