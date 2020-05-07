@@ -43,12 +43,12 @@ async def on_message(message):
             'name = {}, id = {}'.format(item.name, item.id),
             file=discord.File(item_save)
         )
-    if message.content.startswith('!!!p'):
+    if message.content.startswith('!!!p '):
         for search_query in message.content.split(" ")[1:]:
             items = list(client_box.search().query(query=search_query))
             if len(items) == 0:
                 continue
-            item = items[0]
+            item = choice(items)
             item_save = str(savedir / item.name)
             with open(item_save, 'wb') as file:
                 client_box.file(item.id).download_to(file)
@@ -71,7 +71,7 @@ async def on_message(message):
                         '{} was uploaded. file_id = {}'.format(
                             newfile.name, newfile.id
                         ))
-    if message.content.startswith('!!!delete'):
+    if message.content.startswith('!!!delete '):
         for fileid in message.content.split(' ')[1:]:
             response = client_box.file(file_id=fileid).delete()
             if response is not None:
@@ -82,7 +82,7 @@ async def on_message(message):
                 s = 'failed to remove file with file_id = {}. NOTE: '\
                     'file_id is not file name. check !!!help'.format(fileid)
                 await message.channel.send(s)
-    if message.content.startswith('!!!rename'):
+    if message.content.startswith('!!!rename '):
         if len(message.content.split(' ')) == 3:
             fileid = message.content.split(' ')[1]
             newname = message.content.split(' ')[2]
