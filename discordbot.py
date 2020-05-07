@@ -14,13 +14,16 @@ client_box = boxsdk.Client(
         client_secret=os.environ['BOX_CLIENT_SECLET'],
         enterprise_id=os.environ['BOX_ENTERPRISE_ID'],
         jwt_key_id=os.environ['BOX_APPAUTH_PUBLICKEYID'],
-        rsa_private_key_data=os.environ['BOX_APPAUTH_PRIVATEKEY'].replace('\\n','\n').encode(),
-        rsa_private_key_passphrase=os.environ['BOX_APPAUTH_PASSPHRASE'].encode(),
+        rsa_private_key_data=os.environ['BOX_APPAUTH_PRIVATEKEY'].replace(
+            '\\n', '\n').encode(),
+        rsa_private_key_passphrase=os.environ['BOX_APPAUTH_PASSPHRASE'].encode(
+        ),
     ))
 folder = client_box.folder(os.environ['BOX_DIR_ID'])
 
 alias = {}
 savedir = Path('/tmp')
+
 
 @client_discord.event
 async def on_message(message):
@@ -62,7 +65,9 @@ async def on_message(message):
                 item_save = str(savedir / item.name)
                 with open(item_save, 'wb') as file:
                     client_box.file(item.id).download_to(file)
-                await message.channel.send(item.name, file=discord.File(item_save))
+                await message.channel.send(
+                    item.name, file=discord.File(item_save)
+                )
             except BaseException:
                 continue
     if message.content == '!!!la':
