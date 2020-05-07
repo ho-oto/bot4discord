@@ -74,7 +74,7 @@ async def on_message(message):
     if message.content.startswith('!!!delete'):
         for fileid in message.content.split(' ')[1:]:
             response = client_box.file(file_id=fileid).delete()
-            if response is None:
+            if response is not None:
                 await message.channel.send(
                     'file with file_id = {} was deleted.'.format(fileid)
                 )
