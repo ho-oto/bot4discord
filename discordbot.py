@@ -78,6 +78,35 @@ async def on_message(message):
             await message.channel.send(
                 'file with ID = {} was deleted'.format(fileid)
             )
+    if message.content.startswith('!!!rename'):
+        if len(message.content.split(' ')) == 3:
+            fileid = message.content.split(' ')[1]
+            newname = message.content.split(' ')[2]
+            oldfile = client_box.file(file_id=fileid).get()
+            if oldfile is not None and oldfile.type != 'error':
+                oldfile = oldfile.name
+                if newname.split('.')[-1] != oldfile.split('.')[-1]:
+                    await message.channel.send(
+                        'cannot change filename extension'
+                    )
+                else:
+                    newfile = client_box.file(file_id=fileid).update_info(
+                        {'name': newname}
+                    )
+                    if newfile.type != 'error':
+                        await message.channel.send(
+                            'file {} (id : {}) -> {}'.format(
+                                oldfile, fileid, newname
+                            )
+                        )
+                    else:
+                        s = 'failed to rename '\
+                            '(probably, {} already exists)'.format(newname)
+                        await message.channel.send(s)
+        else:
+            s = 'usage: !!!rename file_id new_name '\
+                '(NOT !!!rename old_name new_name)'
+            await message.channel.send(s)
     if message.content == '!!!list':
         await message.channel.send('{}'.format(os.environ['BOX_URL']))
     if message.content == '!!!help':
