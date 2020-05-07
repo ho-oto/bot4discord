@@ -40,7 +40,10 @@ async def on_message(message):
         item_save = str(savedir / item.name)
         with open(item_save, 'wb') as file:
             client_box.file(item.id).download_to(file)
-        await message.channel.send(item.name, file=discord.File(item_save))
+        await message.channel.send(
+            'name = {}, id = {}'.format(item.name, item.id),
+            file=discord.File(item_save)
+        )
     if message.content.startswith('!!!p'):
         for search_query in message.content.split(" ")[1:]:
             items = list(client_box.search().query(query=search_query))
@@ -50,7 +53,10 @@ async def on_message(message):
             item_save = str(savedir / item.name)
             with open(item_save, 'wb') as file:
                 client_box.file(item.id).download_to(file)
-            await message.channel.send(item.name, file=discord.File(item_save))
+            await message.channel.send(
+                'name = {}, id = {}'.format(item.name, item.id),
+                file=discord.File(item_save)
+            )
     if message.content.startswith('!!!aa'):
         if len(message.content.split(" ")) == 3:
             k = str(message.content.split(" ")[1])
