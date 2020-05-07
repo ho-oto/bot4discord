@@ -23,6 +23,9 @@ folder = client_box.folder(os.environ['BOX_DIR_ID'])
 
 alias = {}
 savedir = Path('/tmp')
+uploaddir = Path('/tmp/upload')
+if not uploaddir.exists():
+    uploaddir.mkdir()
 
 
 @client_discord.event
@@ -85,6 +88,16 @@ async def on_message(message):
             await message.channel.send('Alias removed: {} => {}'.format(k, v))
         except KeyError:
             return
+    if message.content == '!!!upload':
+        for attachment in message.attachments:
+            if attachment.filename.endswith(('.jpg', '.jpeg', '.png', '.gif'))\
+                    and attachment.size < 10485760:
+                await attachment.save(str(uploaddir / attachment.filename))
+                newfile = folder.upload(str(uploaddir / attachment.filename))
+                if newfile.type == 'error':
+                    await message.channel.send(
+                        'failed to upload {}'.format(attachment.filename)
+                    )
     if message.content == '!!!list':
         await message.channel.send('{}'.format(os.environ['BOX_URL']))
     if message.content == '!!!help':
