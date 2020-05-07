@@ -98,6 +98,18 @@ async def on_message(message):
                     await message.channel.send(
                         'failed to upload {}'.format(attachment.filename)
                     )
+                else:
+                    await message.channel.send(
+                        '{} was uploaded. ID = {}'.format(
+                            newfile.name, newfile.id
+                        ))
+    if message.content.startswith('!!!delete'):
+        fileid = message.content.split(' ')[1]
+        resp = client_box.file(file_id=fileid).delete()
+        if resp is None:
+            await message.channel.send(
+                'file with ID = {} was deleted'.format(fileid)
+            )
     if message.content == '!!!list':
         await message.channel.send('{}'.format(os.environ['BOX_URL']))
     if message.content == '!!!help':
@@ -115,6 +127,9 @@ async def on_message(message):
             '    `!!!la` : 登録されてるエイリアスを一覧表示する。\n'\
             '    `!!!ra key` : エイリアスを削除する。\n'\
             '    `!!!list` : 画像リストのURLを表示する\n'\
+            '    `!!!upload` : 画像をアップロードする。jpg, jpeg, png, gifのみ\n'\
+            '    `!!!delete file_id` : 画像をBOXから削除する。file_idはBOXで'\
+            '画像を開いたときのURLの末尾の数字\n'\
             '    `!!!help` : これを表示する。'.format(os.environ['BOX_URL'])
         await message.channel.send(s)
 
