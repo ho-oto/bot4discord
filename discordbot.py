@@ -21,7 +21,6 @@ client_box = boxsdk.Client(
     ))
 folder = client_box.folder(os.environ['BOX_DIR_ID'])
 
-alias = {}
 savedir = Path('/tmp')
 uploaddir = Path('/tmp/upload')
 if not uploaddir.exists():
@@ -57,43 +56,6 @@ async def on_message(message):
                 'name = {}, id = {}'.format(item.name, item.id),
                 file=discord.File(item_save)
             )
-    if message.content.startswith('!!!aa'):
-        if len(message.content.split(" ")) == 3:
-            k = str(message.content.split(" ")[1])
-            v = str(message.content.split(" ")[2])
-            alias[k] = v
-            await message.channel.send('Alias added: {} => {}'.format(k, v))
-    if message.content.startswith('!!!pa'):
-        for keys in message.content.split(" ")[1:]:
-            try:
-                search_query = alias[str(keys)]
-                items = list(client_box.search().query(query=search_query))
-                if len(items) == 0:
-                    continue
-                item = items[0]
-                item_save = str(savedir / item.name)
-                with open(item_save, 'wb') as file:
-                    client_box.file(item.id).download_to(file)
-                await message.channel.send(
-                    item.name, file=discord.File(item_save)
-                )
-            except BaseException:
-                continue
-    if message.content == '!!!la':
-        s = 'list of aliases:\n'
-        for k, v in alias.items():
-            s += '{} => {}\n'.format(k, v)
-        await message.channel.send(s)
-    if message.content.startswith('!!!ra'):
-        args = message.content.split(" ")
-        if len(args) != 2:
-            return
-        try:
-            k = str(args[1])
-            v = alias.pop(k)
-            await message.channel.send('Alias removed: {} => {}'.format(k, v))
-        except KeyError:
-            return
     if message.content == '!!!upload':
         for attachment in message.attachments:
             if attachment.filename.endswith(('.jpg', '.jpeg', '.png', '.gif'))\
@@ -119,23 +81,17 @@ async def on_message(message):
     if message.content == '!!!list':
         await message.channel.send('{}'.format(os.environ['BOX_URL']))
     if message.content == '!!!help':
-        s = '{} に'\
-            '置いてある画像を表示するbot。真面目に作ってないのでBox内に画像以外'\
-            'があるとそれをアップロードしちゃうので注意。\n'\
+        s = '{} に置いてある画像を表示するbot\n'\
             '使い方\n'\
             '    `!!!p` : Boxの中からランダムな画像を表示\n'\
             '    `!!!p name` : Boxの中をnameで検索してヒットしたものを表示'\
             'する。スペース区切りで複数指定すると順番に表示する。\n'\
-            '    `!!!aa key val` : エイリアスを足す。`!!!p val`のかわりに`!!!pa key`'\
-            'が使えるようになる。永続化してないのでなんかあると消えると思うので、'\
-            '多分Boxの中のファイル名を弄ったほうがはやい。\n'\
-            '    `!!!pa name` : エイリアスを使って表示。\n'\
-            '    `!!!la` : 登録されてるエイリアスを一覧表示する。\n'\
-            '    `!!!ra key` : エイリアスを削除する。\n'\
             '    `!!!list` : 画像リストのURLを表示する\n'\
             '    `!!!upload` : 画像をアップロードする。jpg, jpeg, png, gifのみ\n'\
             '    `!!!delete file_id` : 画像をBOXから削除する。file_idはBOXで'\
-            '画像を開いたときのURLの末尾の数字\n'\
+            '画像を開いたときのURLの末尾の数字。ファイル名では指定できない。\n'\
+            '    `!!!rename file_id new_name` : file_idの画像をnew_nameに'\
+            'リネームする。ファイル名では指定できない。\n'\
             '    `!!!help` : これを表示する。'.format(os.environ['BOX_URL'])
         await message.channel.send(s)
 
