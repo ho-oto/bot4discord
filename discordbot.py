@@ -107,6 +107,10 @@ async def on_message(message):
                         s = 'failed to rename '\
                             '(probably, {} already exists)'.format(newname)
                         await message.channel.send(s)
+            else:
+                s = 'cannot find file with id = {}. NOTE: '\
+                    'file_id is not file name. check !!!help'.format(fileid)
+                await message.channel.send(s)
         else:
             s = 'usage: !!!rename file_id new_name '\
                 '(NOT !!!rename old_name new_name)'
