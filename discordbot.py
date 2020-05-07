@@ -80,6 +80,8 @@ async def on_message(message):
             await message.channel.send('Alias removed: {} => {}'.format(k, v))
         except KeyError:
             return
+    if message.content == '!!!list':
+        await message.channel.send('{}'.format(os.environ['BOX_URL']))
     if message.content == '!!!help':
         s = '{} に'\
             '置いてある画像を表示するbot。真面目に作ってないのでBox内に画像以外'\
@@ -94,6 +96,7 @@ async def on_message(message):
             '    `!!!pa name` : エイリアスを使って表示。\n'\
             '    `!!!la` : 登録されてるエイリアスを一覧表示する。\n'\
             '    `!!!ra key` : エイリアスを削除する。\n'\
+            '    `!!!list` : 画像リストのURLを表示する\n'\
             '    `!!!help` : これを表示する。'.format(os.environ['BOX_URL'])
         await message.channel.send(s)
 
