@@ -31,7 +31,7 @@ if not uploaddir.exists():
 async def on_message(message):
     if message.author.bot:
         return
-    if message.content in ['!!!', '!!!p', '!!!picture']:
+    if message.content in ['!!!', '!!!p', '!!!r', '!!!picture', '!!!random']:
         items = list(folder.get_items())
         if len(items) == 0:
             return
@@ -44,6 +44,19 @@ async def on_message(message):
             file=discord.File(item_save)
         )
     if message.content.startswith(('!!! ', '!!!p ', '!!!picture ')):
+        for search_query in message.content.split(" ")[1:]:
+            items = list(client_box.search().query(query=search_query))
+            if len(items) == 0:
+                continue
+            item = items[0]
+            item_save = str(savedir / item.name)
+            with open(item_save, 'wb') as file:
+                client_box.file(item.id).download_to(file)
+            await message.channel.send(
+                'name = {}, id = {}'.format(item.name, item.id),
+                file=discord.File(item_save)
+            )
+    if message.content.startswith(('!!!r ', '!!!random ')):
         for search_query in message.content.split(" ")[1:]:
             items = list(client_box.search().query(query=search_query))
             if len(items) == 0:
@@ -120,11 +133,14 @@ async def on_message(message):
     if message.content == '!!!help':
         s = '{} に置いてある画像を表示するbot\n'\
             '使い方\n'\
-            '    `!!!`, `!!!p`, `!!!picture` : Boxの中からランダムな画像を表示\n'\
-            '    `!!! name` : Boxの中をnameで検索してヒットしたものを表示'\
-            'する。スペース区切りで複数指定すると順番に表示する。\n'\
-            '    `!!!list` : 画像リストのURLを表示する\n'\
-            '    `!!!upload` : 画像をアップロードする。jpg, jpeg, png, gifのみ\n'\
+            '    `!!!`, `!!!p`, `!!!r`, `!!!picture`, `!!!random` : '\
+            'ランダムに表示\n'\
+            '    `!!! name`, `!!!p name`, `!!!picture name` : '\
+            'nameで検索して一番上の画像を表示\n'\
+            '    `!!!r name`, `!!!random name` : '\
+            'nameで検索した結果からランダムに表示\n'\
+            '    `!!!list` : 画像リストのURLを表示\n'\
+            '    `!!!upload` : 画像(jpg, jpeg, png, gif)をアップロード\n'\
             '    `!!!delete file_id` : 画像をBOXから削除する。file_idはBOXで'\
             '画像を開いたときのURLの末尾の数字。ファイル名では指定できない。\n'\
             '    `!!!rename file_id new_name` : file_idの画像をnew_nameに'\
