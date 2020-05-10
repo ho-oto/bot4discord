@@ -3,6 +3,7 @@ from pathlib import Path
 import os
 
 import discord
+from discord.ext import commands
 import boxsdk
 
 TOKEN = os.environ['DISCORD_TOKEN']
@@ -27,125 +28,123 @@ if not uploaddir.exists():
     uploaddir.mkdir()
 
 
-@client_discord.event
-async def on_message(message):
-    if message.author.bot:
+bot = commands.Bot(command_prefix='!!', case_insensitive=True)
+
+
+@bot.command(aliases=['r', ''])
+async def random(ctx, *args):
+    if len(args) == 0:
+        await random_all(ctx)
+    else:
+        await _search(ctx, args, which='r')
+
+
+@bot.command(aliases=['s'])
+async def search(ctx, *args):
+    if len(args) == 0:
+        await random_all(ctx)
+    else:
+        await _search(ctx, args, which='s')
+
+
+async def random_all(ctx):
+    items = list(folder.get_items())
+    if len(items) == 0:
         return
-    if message.content in ['!!!', '!!!p', '!!!r', '!!!picture', '!!!random']:
-        items = list(folder.get_items())
+    item = choice(items)
+    item_save = str(savedir / item.name)
+    with open(item_save, 'wb') as file:
+        client_box.file(item.id).download_to(file)
+    await ctx.send(
+        '**name = {}** (id = {})'.format(item.name, item.id),
+        file=discord.File(item_save)
+    )
+
+
+async def _search(ctx, args, which):
+    for search_query in args:
+        items = list(client_box.search().query(query=search_query))
         if len(items) == 0:
-            return
-        item = choice(items)
+            continue
+        if which == 'r':
+            item = choice(items)
+        elif which == 's':
+            item = items[0]
         item_save = str(savedir / item.name)
         with open(item_save, 'wb') as file:
             client_box.file(item.id).download_to(file)
-        await message.channel.send(
-            'name = {}, id = {}'.format(item.name, item.id),
+        await ctx.send(
+            '**name = {}** (id = {})'.format(item.name, item.id),
             file=discord.File(item_save)
         )
-    if message.content.startswith(('!!! ', '!!!p ', '!!!picture ')):
-        for search_query in message.content.split(" ")[1:]:
-            items = list(client_box.search().query(query=search_query))
-            if len(items) == 0:
-                continue
-            item = items[0]
-            item_save = str(savedir / item.name)
-            with open(item_save, 'wb') as file:
-                client_box.file(item.id).download_to(file)
-            await message.channel.send(
-                'name = {}, id = {}'.format(item.name, item.id),
-                file=discord.File(item_save)
+
+
+@bot.command(name=['list'])
+async def _list(ctx):
+    await ctx.send('{}'.format(os.environ['BOX_URL']))
+
+
+@bot.command()
+async def upload(ctx):
+    for attachment in ctx.message.attachments:
+        if not attachment.filename.endswith(('.jpg', '.jpeg', '.png', '.gif'))\
+                or attachment.size >= 10485760:
+            continue
+
+        await attachment.save(str(uploaddir / attachment.filename))
+        newfile = folder.upload(str(uploaddir / attachment.filename))
+        if newfile.type == 'error':
+            await ctx.send(
+                'failed to upload {}'.format(attachment.filename)
             )
-    if message.content.startswith(('!!!r ', '!!!random ')):
-        for search_query in message.content.split(" ")[1:]:
-            items = list(client_box.search().query(query=search_query))
-            if len(items) == 0:
-                continue
-            item = choice(items)
-            item_save = str(savedir / item.name)
-            with open(item_save, 'wb') as file:
-                client_box.file(item.id).download_to(file)
-            await message.channel.send(
-                'name = {}, id = {}'.format(item.name, item.id),
-                file=discord.File(item_save)
+        else:
+            await ctx.send(
+                '{} was uploaded (file_id = {})'.format(
+                    newfile.name, newfile.id
+                ))
+
+
+@bot.command()
+async def delete(ctx, *args):
+    for fileid in args:
+        response = client_box.file(file_id=fileid).delete()
+        if response is not None:
+            await ctx.send(
+                'file with file_id = {} was deleted.'.format(fileid)
             )
-    if message.content == '!!!upload':
-        for attachment in message.attachments:
-            if attachment.filename.endswith(('.jpg', '.jpeg', '.png', '.gif'))\
-                    and attachment.size < 10485760:
-                await attachment.save(str(uploaddir / attachment.filename))
-                newfile = folder.upload(str(uploaddir / attachment.filename))
-                if newfile.type == 'error':
-                    await message.channel.send(
-                        'failed to upload {}'.format(attachment.filename)
+        else:
+            s = 'failed to remove file with file_id = {}. **NOTE: '\
+                'file_id is not file name.**'.format(fileid)
+            await ctx.send(s)
+
+
+@bot.command()
+async def rename(ctx, fileid, newname):
+    oldfile = client_box.file(file_id=fileid).get()
+    if oldfile is not None and oldfile.type != 'error':
+        oldfile = oldfile.name
+        if newname.split('.')[-1] != oldfile.split('.')[-1]:
+            await ctx.send(
+                'cannot change filename extension'
+            )
+        else:
+            newfile = client_box.file(file_id=fileid).update_info(
+                {'name': newname}
+            )
+            if newfile.type != 'error':
+                await ctx.send(
+                    'file {} (id : {}) -> {}'.format(
+                        oldfile, fileid, newname
                     )
-                else:
-                    await message.channel.send(
-                        '{} was uploaded. file_id = {}'.format(
-                            newfile.name, newfile.id
-                        ))
-    if message.content.startswith('!!!delete '):
-        for fileid in message.content.split(' ')[1:]:
-            response = client_box.file(file_id=fileid).delete()
-            if response is not None:
-                await message.channel.send(
-                    'file with file_id = {} was deleted.'.format(fileid)
                 )
             else:
-                s = 'failed to remove file with file_id = {}. NOTE: '\
-                    'file_id is not file name. check !!!help'.format(fileid)
-                await message.channel.send(s)
-    if message.content.startswith('!!!rename '):
-        if len(message.content.split(' ')) == 3:
-            fileid = message.content.split(' ')[1]
-            newname = message.content.split(' ')[2]
-            oldfile = client_box.file(file_id=fileid).get()
-            if oldfile is not None and oldfile.type != 'error':
-                oldfile = oldfile.name
-                if newname.split('.')[-1] != oldfile.split('.')[-1]:
-                    await message.channel.send(
-                        'cannot change filename extension'
-                    )
-                else:
-                    newfile = client_box.file(file_id=fileid).update_info(
-                        {'name': newname}
-                    )
-                    if newfile.type != 'error':
-                        await message.channel.send(
-                            'file {} (id : {}) -> {}'.format(
-                                oldfile, fileid, newname
-                            )
-                        )
-                    else:
-                        s = 'failed to rename '\
-                            '(probably, {} already exists)'.format(newname)
-                        await message.channel.send(s)
-            else:
-                s = 'cannot find file with id = {}. NOTE: '\
-                    'file_id is not file name. check !!!help'.format(fileid)
-                await message.channel.send(s)
-        else:
-            s = 'usage: !!!rename file_id new_name '\
-                '(NOT !!!rename old_name new_name)'
-            await message.channel.send(s)
-    if message.content == '!!!list':
-        await message.channel.send('{}'.format(os.environ['BOX_URL']))
-    if message.content == '!!!help':
-        s = '{} に置いてある画像を表示するbot\n'\
-            '使い方\n'\
-            '    `!!!`, `!!!p`, `!!!r`, `!!!picture`, `!!!random` : '\
-            'ランダムに表示\n'\
-            '    `!!! name`, `!!!p name`, `!!!picture name` : '\
-            'nameで検索して一番上の画像を表示\n'\
-            '    `!!!r name`, `!!!random name` : '\
-            'nameで検索した結果からランダムに表示\n'\
-            '    `!!!list` : 画像リストのURLを表示\n'\
-            '    `!!!upload` : 画像(jpg, jpeg, png, gif)をアップロード\n'\
-            '    `!!!delete file_id` : 画像をBOXから削除する。file_idはBOXで'\
-            '画像を開いたときのURLの末尾の数字。ファイル名では指定できない。\n'\
-            '    `!!!rename file_id new_name` : file_idの画像をnew_nameに'\
-            'リネームする。ファイル名では指定できない。\n'\
-            '    `!!!help` : これを表示する。'.format(os.environ['BOX_URL'])
-        await message.channel.send(s)
+                s = 'failed to rename '\
+                    '(probably, {} already exists)'.format(newname)
+                await ctx.send(s)
+    else:
+        s = 'cannot find file with id = {}. NOTE: '\
+            'file_id is not file name. check !!!help'.format(fileid)
+        await ctx.send(s)
+
 
 client_discord.run(TOKEN)
