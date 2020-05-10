@@ -17,7 +17,8 @@ client_box = boxsdk.Client(
         rsa_private_key_passphrase=os.environ['BOX_APPAUTH_PASSPHRASE'].encode(
         ),
     ))
-folder = client_box.folder(os.environ['BOX_DIR_ID'])
+folder_picture = client_box.folder(os.environ['BOX_DIR_ID_PICTURE'])
+folder_music = client_box.folder(os.environ['BOX_DIR_ID_MUSIC'])
 
 savedir = Path('/tmp')
 uploaddir = Path('/tmp/upload')
@@ -50,7 +51,7 @@ async def search(ctx, *args):
 
 
 async def random_all(ctx):
-    items = list(folder.get_items())
+    items = list(folder_picture.get_items())
     if len(items) == 0:
         return
     item = choice(items)
@@ -94,7 +95,7 @@ async def upload(ctx):
             continue
 
         await attachment.save(str(uploaddir / attachment.filename))
-        newfile = folder.upload(str(uploaddir / attachment.filename))
+        newfile = folder_picture.upload(str(uploaddir / attachment.filename))
         if newfile.type == 'error':
             await ctx.send(
                 'failed to upload {}'.format(attachment.filename)
