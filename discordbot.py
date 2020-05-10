@@ -31,7 +31,7 @@ if not uploaddir.exists():
 bot = commands.Bot(command_prefix='!!', case_insensitive=True)
 
 
-@bot.command(aliases=['r', ''])
+@bot.command(aliases=['r', ''], help='Box内からの検索結果の画像をランダム表示')
 async def random(ctx, *args):
     if len(args) == 0:
         await random_all(ctx)
@@ -39,7 +39,7 @@ async def random(ctx, *args):
         await _search(ctx, args, which='r')
 
 
-@bot.command(aliases=['s'])
+@bot.command(aliases=['s'], help='Box内からの検索結果の最上位画像を表示')
 async def search(ctx, *args):
     if len(args) == 0:
         await random_all(ctx)
@@ -79,12 +79,12 @@ async def _search(ctx, args, which):
         )
 
 
-@bot.command(name=['list'])
-async def _list(ctx):
+@bot.command(help='BoxのURLを表示')
+async def url(ctx):
     await ctx.send('{}'.format(os.environ['BOX_URL']))
 
 
-@bot.command()
+@bot.command(help='Boxに画像をアップロード')
 async def upload(ctx):
     for attachment in ctx.message.attachments:
         if not attachment.filename.endswith(('.jpg', '.jpeg', '.png', '.gif'))\
@@ -104,7 +104,7 @@ async def upload(ctx):
                 ))
 
 
-@bot.command()
+@bot.command(help='**file_id**(ファイル名ではない)を指定してBoxから画像を削除')
 async def delete(ctx, *args):
     for fileid in args:
         response = client_box.file(file_id=fileid).delete()
@@ -118,7 +118,7 @@ async def delete(ctx, *args):
             await ctx.send(s)
 
 
-@bot.command()
+@bot.command(help='**file_id**(ファイル名ではない)とnew_nameを指定してBox内のファイルのリネーム')
 async def rename(ctx, fileid, newname):
     oldfile = client_box.file(file_id=fileid).get()
     if oldfile is not None and oldfile.type != 'error':
