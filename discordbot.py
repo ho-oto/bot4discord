@@ -6,9 +6,6 @@ import discord
 from discord.ext import commands
 import boxsdk
 
-TOKEN = os.environ['DISCORD_TOKEN']
-client_discord = discord.Client()
-
 client_box = boxsdk.Client(
     boxsdk.JWTAuth(
         client_id=os.environ['BOX_CLIENT_ID'],
@@ -28,10 +25,13 @@ if not uploaddir.exists():
     uploaddir.mkdir()
 
 
-bot = commands.Bot(command_prefix='!!', case_insensitive=True)
+bot = commands.Bot(command_prefix=['!!!', '!!'], case_insensitive=True)
 
 
-@bot.command(aliases=['r', ''], help='Box内からの検索結果の画像をランダム表示')
+@bot.command(aliases=['r', ''], help="""（rのみでも可）ランダム表示
+    検索ワードを付けた場合は検索結果の中からランダム表示
+    コマンド単体の場合はBox全体の中からランダム表示
+""")
 async def random(ctx, *args):
     if len(args) == 0:
         await random_all(ctx)
@@ -39,7 +39,9 @@ async def random(ctx, *args):
         await _search(ctx, args, which='r')
 
 
-@bot.command(aliases=['s'], help='Box内からの検索結果の最上位画像を表示')
+@bot.command(aliases=['s', 'p'], help="""（sまたはpのみでも可）検索表示
+    与えられた引数で検索して最上位の画像を表示
+""")
 async def search(ctx, *args):
     if len(args) == 0:
         await random_all(ctx)
@@ -84,7 +86,7 @@ async def url(ctx):
     await ctx.send('{}'.format(os.environ['BOX_URL']))
 
 
-@bot.command(help='Boxに画像をアップロード')
+@bot.command(help='Boxに画像をアップロード（jpg, jpeg, png, gifのみ）')
 async def upload(ctx):
     for attachment in ctx.message.attachments:
         if not attachment.filename.endswith(('.jpg', '.jpeg', '.png', '.gif'))\
@@ -104,7 +106,10 @@ async def upload(ctx):
                 ))
 
 
-@bot.command(help='**file_id**(ファイル名ではない)を指定してBoxから画像を削除')
+@bot.command(help="""Boxから画像を削除
+    file_id（ファイル名ではない）を指定する
+    file_idは画像をブラウザのBoxで開いたときのURLの末尾の数字
+""")
 async def delete(ctx, *args):
     for fileid in args:
         response = client_box.file(file_id=fileid).delete()
@@ -118,7 +123,10 @@ async def delete(ctx, *args):
             await ctx.send(s)
 
 
-@bot.command(help='**file_id**(ファイル名ではない)とnew_nameを指定してBox内のファイルのリネーム')
+@bot.command(help="""Box内のファイルのリネーム
+    file_id（ファイル名ではない）とnew_nameを指定する（例：!!rename 123456 hoge.png）
+    file_idは画像をブラウザのBoxで開いたときのURLの末尾の数字
+""")
 async def rename(ctx, fileid, newname):
     oldfile = client_box.file(file_id=fileid).get()
     if oldfile is not None and oldfile.type != 'error':
@@ -147,4 +155,4 @@ async def rename(ctx, fileid, newname):
         await ctx.send(s)
 
 
-client_discord.run(TOKEN)
+bot.run(os.environ['DISCORD_TOKEN'])
