@@ -90,8 +90,9 @@ async def url(ctx):
 @bot.command(help='Boxに画像をアップロード（jpg, jpeg, png, gifのみ）')
 async def upload(ctx):
     for attachment in ctx.message.attachments:
-        if not attachment.filename.endswith(('.jpg', '.jpeg', '.png', '.gif'))\
-                or attachment.size >= 10485760:
+        if not attachment.filename.endswith(
+            ('.jpg', '.jpeg', '.png', '.gif', '.JPG', '.JPEG', '.PNG', '.GIF')
+        ) or attachment.size >= 10485760:
             continue
 
         await attachment.save(str(uploaddir / attachment.filename))
