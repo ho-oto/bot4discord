@@ -166,6 +166,10 @@ async def rename(ctx, fileid, newname):
 @bot.command(help="""音楽再生
 """)
 async def music(ctx, searchquery):
+    if (not ctx.author.voice) or (not ctx.author.voice.channel):
+        await ctx.send('please connect to voice channel')
+        return
+
     items = list(client_box.search().query(
         query=searchquery,
         ancestor_folders=[folder_music],
@@ -183,11 +187,27 @@ async def music(ctx, searchquery):
             client_box.file(item.id).download_to(file)
         await ctx.send('download finish')
 
-    if (not ctx.author.voice) or (not ctx.author.voice.channel):
-        await ctx.send('please connect to voice channel')
-        return
     await ctx.author.voice.channel.connect()
     ctx.message.guild.voice_client.play(discord.FFmpegPCMAudio(item_save))
+
+
+@bot.command(help="""再生終了
+""")
+async def stop(ctx):
+    if ctx.message.guild.voice_client is not None:
+        await ctx.message.guild.voice_client.disconnect()
+
+
+@bot.command(aliases=['resume'], help="""一時停止/再開
+""")
+async def pause(ctx):
+    vc = ctx.message.guild.voice_client
+    if vc is None:
+        return
+    if vc.is_paused():
+        vc.resume()
+    if vc.is_playng():
+        vc.pause()
 
 
 bot.run(os.environ['DISCORD_TOKEN'])
