@@ -163,22 +163,28 @@ async def rename(ctx, fileid, newname):
         await ctx.send(s)
 
 
-# @bot.command(help="""音楽再生
-# """)
-# async def music(ctx, args):
-#     voice_state = ctx.author.voice
-#     if (not voice_state) or (not voice_state.channel):
-#         return
-#     await voice_state.channel.connect()
-#     items = list(client_box.search().query(query=args))
-#     item = items[0]
-#     item_save = str(tmpmusicdir / item.name)
-#     with open(item_save, 'wb') as file:
-#         client_box.file(item.id).download_to(file)
-#     await ctx.send(
-#         '**name = {}** (id = {})'.format(item.name, item.id),
-#         file=discord.File(item_save)
-#     )
+@bot.command(help="""音楽再生
+""")
+async def music(ctx, searchquery):
+    voice_state = ctx.author.voice
+    if (not voice_state) or (not voice_state.channel):
+        return
+    await voice_state.channel.connect()
+
+    vc = ctx.message.guild.voice_client
+    items = list(client_box.search().query(
+        query=searchquery,
+        ancestor_folders=[folder_music],
+        file_extensions=['mp3', 'wmv']
+    ))
+
+    item = items[0]
+    item_save = str(tmpmusicdir / item.name)
+    with open(item_save, 'wb') as file:
+        client_box.file(item.id).download_to(file)
+
+    vc.play(discord.FFmpegPCMAudio(item_save))
+    await vc.disconnect()
 
 
 bot.run(os.environ['DISCORD_TOKEN'])
