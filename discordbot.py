@@ -20,8 +20,8 @@ client_box = boxsdk.Client(
 folder_picture = client_box.folder(os.environ['BOX_DIR_ID_PICTURE'])
 folder_music = client_box.folder(os.environ['BOX_DIR_ID_MUSIC'])
 
-if not discord.opus.is_loaded():
-    discord.opus.load_opus("heroku-buildpack-libopus")
+# if not discord.opus.is_loaded():
+#     discord.opus.load_opus("heroku-buildpack-libopus")
 
 savedir = Path('/tmp')
 uploaddir = Path('/tmp/upload')
@@ -162,22 +162,22 @@ async def rename(ctx, fileid, newname):
         await ctx.send(s)
 
 
-@bot.command(help="""音楽再生
-""")
-async def music(ctx, args):
-    voice_state = ctx.author.voice
-    if (not voice_state) or (not voice_state.channel):
-        return
-    await voice_state.channel.connect()
-    items = list(client_box.search().query(query=args))
-    item = items[0]
-    item_save = str(tmpmusicdir / item.name)
-    with open(item_save, 'wb') as file:
-        client_box.file(item.id).download_to(file)
-    await ctx.send(
-        '**name = {}** (id = {})'.format(item.name, item.id),
-        file=discord.File(item_save)
-    )
+# @bot.command(help="""音楽再生
+# """)
+# async def music(ctx, args):
+#     voice_state = ctx.author.voice
+#     if (not voice_state) or (not voice_state.channel):
+#         return
+#     await voice_state.channel.connect()
+#     items = list(client_box.search().query(query=args))
+#     item = items[0]
+#     item_save = str(tmpmusicdir / item.name)
+#     with open(item_save, 'wb') as file:
+#         client_box.file(item.id).download_to(file)
+#     await ctx.send(
+#         '**name = {}** (id = {})'.format(item.name, item.id),
+#         file=discord.File(item_save)
+#     )
 
 
 bot.run(os.environ['DISCORD_TOKEN'])
