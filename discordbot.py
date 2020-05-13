@@ -166,24 +166,31 @@ async def rename(ctx, fileid, newname):
 @bot.command(help="""音楽再生
 """)
 async def music(ctx, searchquery):
-    voice_state = ctx.author.voice
-    if (not voice_state) or (not voice_state.channel):
-        return
-    await voice_state.channel.connect()
-
-    vc = ctx.message.guild.voice_client
     items = list(client_box.search().query(
         query=searchquery,
         ancestor_folders=[folder_music],
-        file_extensions=['mp3', 'wmv']
+        file_extensions=['mp3', 'wmv', 'm4a']
     ))
 
-    item = items[0]
-    item_save = str(tmpmusicdir / item.name)
-    with open(item_save, 'wb') as file:
-        client_box.file(item.id).download_to(file)
+    if len(items) == 0:
+        await ctx.send('no hitted results')
+        return
+    else:
+        item = items[0]
+        item_save = str(tmpmusicdir / item.name)
+        await ctx.send('download {}'.format(item.name))
+        with open(item_save, 'wb') as file:
+            client_box.file(item.id).download_to(file)
+        await ctx.send('download finish')
+
+    if (not ctx.author.voice) or (not ctx.author.voice.channel):
+        await ctx.send('please connect to voice channel')
+        return
+    await ctx.author.voice.channel.connect()
+    vc = ctx.message.guild.voice_client
 
     vc.play(discord.FFmpegPCMAudio(item_save))
+
     await vc.disconnect()
 
 
