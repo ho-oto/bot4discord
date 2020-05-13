@@ -187,11 +187,7 @@ async def music(ctx, searchquery):
         await ctx.send('please connect to voice channel')
         return
     await ctx.author.voice.channel.connect()
-    vc = ctx.message.guild.voice_client
-
-    vc.play(discord.FFmpegPCMAudio(item_save))
-
-    await vc.disconnect()
+    ctx.message.guild.voice_client.play(discord.FFmpegPCMAudio(item_save))
 
 
 bot.run(os.environ['DISCORD_TOKEN'])
