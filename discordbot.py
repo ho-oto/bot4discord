@@ -211,8 +211,10 @@ async def music(ctx, searchquery):
 @bot.command(help="""再生終了
 """)
 async def stop(ctx):
-    if ctx.message.guild.voice_client is not None:
-        await ctx.message.guild.voice_client.disconnect()
+    vc = ctx.message.guild.voice_client
+    if vc is None:
+        return
+    await vc.disconnect()
 
 
 @bot.command(aliases=['resume'], help="""一時停止/再開
@@ -221,9 +223,9 @@ async def pause(ctx):
     vc = ctx.message.guild.voice_client
     if vc is None:
         return
-    if vc.is_paused():
+    if vc.is_playng() and vc.is_paused():
         vc.resume()
-    if vc.is_playng():
+    if vc.is_playng() and not vc.is_paused():
         vc.pause()
 
 
