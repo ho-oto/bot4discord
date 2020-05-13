@@ -70,7 +70,7 @@ async def _search(ctx, args, which):
     for search_query in args:
         items = list(client_box.search().query(
             query=search_query,
-            ancestor_folders=folder_picture,
+            ancestor_folders=[folder_picture],
             file_extensions=['jpg', 'jpeg', 'png', 'gif']
         ))
         if len(items) == 0:
