@@ -20,11 +20,16 @@ client_box = boxsdk.Client(
 folder_picture = client_box.folder(os.environ['BOX_DIR_ID_PICTURE'])
 folder_music = client_box.folder(os.environ['BOX_DIR_ID_MUSIC'])
 
+if not discord.opus.is_loaded():
+    discord.opus.load_opus("heroku-buildpack-libopus")
+
 savedir = Path('/tmp')
 uploaddir = Path('/tmp/upload')
+tmpmusicdir = Path('/tmp/music')
 if not uploaddir.exists():
     uploaddir.mkdir()
-
+if not tmpmusicdir.exists():
+    tmpmusicdir.mkdir()
 
 bot = commands.Bot(command_prefix=['!!!', '!!'], case_insensitive=True)
 
