@@ -93,30 +93,47 @@ async def url(ctx):
     await ctx.send('{}'.format(os.environ['BOX_URL']))
 
 
-@bot.command(help='Boxに画像をアップロード（jpg, jpeg, png, gifのみ）')
+@bot.command(help='Boxにアップロード（jpg, jpeg, png, gif, mp3, m4a, wmv）')
 async def upload(ctx):
     for attachment in ctx.message.attachments:
-        if not attachment.filename.endswith(
+        if attachment.filename.endswith(
             ('.jpg', '.jpeg', '.png', '.gif', '.JPG', '.JPEG', '.PNG', '.GIF')
-        ) or attachment.size >= 10485760:
-            continue
+        ) and attachment.size < 10485760:
 
-        await attachment.save(str(uploaddir / attachment.filename))
-        newfile = folder_picture.upload(str(uploaddir / attachment.filename))
-        if newfile.type == 'error':
-            await ctx.send(
-                'failed to upload {}'.format(attachment.filename)
+            await attachment.save(str(uploaddir / attachment.filename))
+            newfile = folder_picture.upload(
+                str(uploaddir / attachment.filename)
             )
-        else:
-            await ctx.send(
-                '{} was uploaded (file_id = {})'.format(
-                    newfile.name, newfile.id
-                ))
+            if newfile.type == 'error':
+                await ctx.send(
+                    'failed to upload {}'.format(attachment.filename)
+                )
+            else:
+                await ctx.send(
+                    '{} was uploaded (file_id = {})'.format(
+                        newfile.name, newfile.id
+                    ))
+
+        elif attachment.filename.endswith(('.mp3', '.wmv', '.m4a')):
+
+            await attachment.save(str(uploaddir / attachment.filename))
+            newfile = folder_music.upload(
+                str(uploaddir / attachment.filename)
+            )
+            if newfile.type == 'error':
+                await ctx.send(
+                    'failed to upload {}'.format(attachment.filename)
+                )
+            else:
+                await ctx.send(
+                    '{} was uploaded (file_id = {})'.format(
+                        newfile.name, newfile.id
+                    ))
 
 
-@bot.command(help="""Boxから画像を削除
+@bot.command(help="""Boxからファイルを削除
     file_id（ファイル名ではない）を指定する
-    file_idは画像をブラウザのBoxで開いたときのURLの末尾の数字
+    file_idはファイルをブラウザのBoxで開いたときのURLの末尾の数字
 """)
 async def delete(ctx, *args):
     for fileid in args:
