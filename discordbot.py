@@ -28,28 +28,80 @@ if not uploaddir.exists():
 if not tmpmusicdir.exists():
     tmpmusicdir.mkdir()
 
-bot = commands.Bot(command_prefix=['!!!', '!!'], case_insensitive=True)
+
+class Picture(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
+
+    @commands.command(aliases=['r', ''], help="""（rのみでも可）ランダム表示
+        検索ワードを付けた場合は検索結果の中からランダム表示
+        コマンド単体の場合はBox全体の中からランダム表示
+    """)
+    async def random(self, ctx, *args):
+        if len(args) == 0:
+            await random_all(ctx)
+        else:
+            await _search(ctx, args, which='r')
+
+    @commands.command(aliases=['s', 'p'], help="""（sまたはpのみでも可）検索表示
+        与えられた引数で検索して最上位の画像を表示
+    """)
+    async def search(self, ctx, *args):
+        if len(args) == 0:
+            await random_all(ctx)
+        else:
+            await _search(ctx, args, which='s')
 
 
-@bot.command(aliases=['r', ''], help="""（rのみでも可）ランダム表示
-    検索ワードを付けた場合は検索結果の中からランダム表示
-    コマンド単体の場合はBox全体の中からランダム表示
-""")
-async def random(ctx, *args):
-    if len(args) == 0:
-        await random_all(ctx)
-    else:
-        await _search(ctx, args, which='r')
+class Music(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
 
+    @commands.command(help="""音楽再生
+    """)
+    async def music(self, ctx, searchquery):
+        if (not ctx.author.voice) or (not ctx.author.voice.channel):
+            await ctx.send('please connect to voice channel')
+            return
 
-@bot.command(aliases=['s', 'p'], help="""（sまたはpのみでも可）検索表示
-    与えられた引数で検索して最上位の画像を表示
-""")
-async def search(ctx, *args):
-    if len(args) == 0:
-        await random_all(ctx)
-    else:
-        await _search(ctx, args, which='s')
+        items = list(client_box.search().query(
+            query=searchquery,
+            ancestor_folders=[folder_music],
+            file_extensions=['mp3', 'wmv', 'm4a']
+        ))
+
+        if len(items) == 0:
+            await ctx.send('no hitted results')
+            return
+        else:
+            item = items[0]
+            item_save = str(tmpmusicdir / item.name)
+            await ctx.send('download {}'.format(item.name))
+            with open(item_save, 'wb') as file:
+                client_box.file(item.id).download_to(file)
+            await ctx.send('download finish')
+
+        await ctx.author.voice.channel.connect()
+        ctx.message.guild.voice_client.play(discord.FFmpegPCMAudio(item_save))
+
+    @commands.command(help="""再生終了
+    """)
+    async def stop(self, ctx):
+        vc = ctx.message.guild.voice_client
+        if vc is None:
+            return
+        await vc.disconnect()
+
+    @commands.command(aliases=['resume'], help="""一時停止/再開
+    """)
+    async def pause(self, ctx):
+        vc = ctx.message.guild.voice_client
+        if vc is None:
+            return
+        if vc.is_playng() and vc.is_paused():
+            vc.resume()
+        elif vc.is_playng() and not vc.is_paused():
+            vc.pause()
 
 
 async def random_all(ctx):
@@ -88,145 +140,104 @@ async def _search(ctx, args, which):
         )
 
 
-@bot.command(help='BoxのURLを表示')
-async def url(ctx):
-    await ctx.send('{}'.format(os.environ['BOX_URL']))
+class File(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
 
+    @commands.command(help='BoxのURLを表示')
+    async def url(self, ctx):
+        await ctx.send('{}'.format(os.environ['BOX_URL']))
 
-@bot.command(help='Boxにアップロード（jpg, jpeg, png, gif, mp3, m4a, wmv）')
-async def upload(ctx):
-    for attachment in ctx.message.attachments:
-        if attachment.filename.endswith(
-            ('.jpg', '.jpeg', '.png', '.gif', '.JPG', '.JPEG', '.PNG', '.GIF')
-        ) and attachment.size < 10485760:
+    @commands.command(help='Boxにアップロード（jpg, jpeg, png, gif, mp3, m4a, wmv）')
+    async def upload(self, ctx):
+        for attachment in ctx.message.attachments:
+            if attachment.filename.endswith(
+                ('.jpg', '.jpeg', '.png', '.gif',
+                 '.JPG', '.JPEG', '.PNG', '.GIF')
+            ) and attachment.size < 10485760:
 
-            await attachment.save(str(uploaddir / attachment.filename))
-            newfile = folder_picture.upload(
-                str(uploaddir / attachment.filename)
-            )
-            if newfile.type == 'error':
+                await attachment.save(str(uploaddir / attachment.filename))
+                newfile = folder_picture.upload(
+                    str(uploaddir / attachment.filename)
+                )
+                if newfile.type == 'error':
+                    await ctx.send(
+                        'failed to upload {}'.format(attachment.filename)
+                    )
+                else:
+                    await ctx.send(
+                        '{} was uploaded (file_id = {})'.format(
+                            newfile.name, newfile.id
+                        ))
+
+            elif attachment.filename.endswith(('.mp3', '.wmv', '.m4a')):
+
+                await attachment.save(str(uploaddir / attachment.filename))
+                newfile = folder_music.upload(
+                    str(uploaddir / attachment.filename)
+                )
+                if newfile.type == 'error':
+                    await ctx.send(
+                        'failed to upload {}'.format(attachment.filename)
+                    )
+                else:
+                    await ctx.send(
+                        '{} was uploaded (file_id = {})'.format(
+                            newfile.name, newfile.id
+                        ))
+
+    @commands.command(help="""Boxからファイルを削除
+        file_id（ファイル名ではない）を指定する
+        file_idはファイルをブラウザのBoxで開いたときのURLの末尾の数字
+    """)
+    async def delete(self, ctx, *args):
+        for fileid in args:
+            response = client_box.file(file_id=fileid).delete()
+            if response is not None:
                 await ctx.send(
-                    'failed to upload {}'.format(attachment.filename)
+                    'file with file_id = {} was deleted.'.format(fileid)
                 )
             else:
-                await ctx.send(
-                    '{} was uploaded (file_id = {})'.format(
-                        newfile.name, newfile.id
-                    ))
+                s = 'failed to remove file with file_id = {}. **NOTE: '\
+                    'file_id is not file name.**'.format(fileid)
+                await ctx.send(s)
 
-        elif attachment.filename.endswith(('.mp3', '.wmv', '.m4a')):
-
-            await attachment.save(str(uploaddir / attachment.filename))
-            newfile = folder_music.upload(
-                str(uploaddir / attachment.filename)
-            )
-            if newfile.type == 'error':
+    @commands.command(help="""Box内のファイルのリネーム
+        file_id（ファイル名ではない）とnew_nameを指定する（例：!!rename 123456 hoge.png）
+        file_idは画像をブラウザのBoxで開いたときのURLの末尾の数字
+    """)
+    async def rename(self, ctx, fileid, newname):
+        oldfile = client_box.file(file_id=fileid).get()
+        if oldfile is not None and oldfile.type != 'error':
+            oldfile = oldfile.name
+            if newname.split('.')[-1] != oldfile.split('.')[-1]:
                 await ctx.send(
-                    'failed to upload {}'.format(attachment.filename)
+                    'cannot change filename extension'
                 )
             else:
-                await ctx.send(
-                    '{} was uploaded (file_id = {})'.format(
-                        newfile.name, newfile.id
-                    ))
-
-
-@bot.command(help="""Boxからファイルを削除
-    file_id（ファイル名ではない）を指定する
-    file_idはファイルをブラウザのBoxで開いたときのURLの末尾の数字
-""")
-async def delete(ctx, *args):
-    for fileid in args:
-        response = client_box.file(file_id=fileid).delete()
-        if response is not None:
-            await ctx.send(
-                'file with file_id = {} was deleted.'.format(fileid)
-            )
+                newfile = client_box.file(file_id=fileid).update_info(
+                    {'name': newname}
+                )
+                if newfile.type != 'error':
+                    await ctx.send(
+                        'file {} (id : {}) -> {}'.format(
+                            oldfile, fileid, newname
+                        )
+                    )
+                else:
+                    s = 'failed to rename '\
+                        '(probably, {} already exists)'.format(newname)
+                    await ctx.send(s)
         else:
-            s = 'failed to remove file with file_id = {}. **NOTE: '\
-                'file_id is not file name.**'.format(fileid)
+            s = 'cannot find file with id = {}. NOTE: '\
+                'file_id is not file name. check !!!help'.format(fileid)
             await ctx.send(s)
 
 
-@bot.command(help="""Box内のファイルのリネーム
-    file_id（ファイル名ではない）とnew_nameを指定する（例：!!rename 123456 hoge.png）
-    file_idは画像をブラウザのBoxで開いたときのURLの末尾の数字
-""")
-async def rename(ctx, fileid, newname):
-    oldfile = client_box.file(file_id=fileid).get()
-    if oldfile is not None and oldfile.type != 'error':
-        oldfile = oldfile.name
-        if newname.split('.')[-1] != oldfile.split('.')[-1]:
-            await ctx.send(
-                'cannot change filename extension'
-            )
-        else:
-            newfile = client_box.file(file_id=fileid).update_info(
-                {'name': newname}
-            )
-            if newfile.type != 'error':
-                await ctx.send(
-                    'file {} (id : {}) -> {}'.format(
-                        oldfile, fileid, newname
-                    )
-                )
-            else:
-                s = 'failed to rename '\
-                    '(probably, {} already exists)'.format(newname)
-                await ctx.send(s)
-    else:
-        s = 'cannot find file with id = {}. NOTE: '\
-            'file_id is not file name. check !!!help'.format(fileid)
-        await ctx.send(s)
+bot = commands.Bot(command_prefix=['!!!', '!!'], case_insensitive=True)
 
-
-@bot.command(help="""音楽再生
-""")
-async def music(ctx, searchquery):
-    if (not ctx.author.voice) or (not ctx.author.voice.channel):
-        await ctx.send('please connect to voice channel')
-        return
-
-    items = list(client_box.search().query(
-        query=searchquery,
-        ancestor_folders=[folder_music],
-        file_extensions=['mp3', 'wmv', 'm4a']
-    ))
-
-    if len(items) == 0:
-        await ctx.send('no hitted results')
-        return
-    else:
-        item = items[0]
-        item_save = str(tmpmusicdir / item.name)
-        await ctx.send('download {}'.format(item.name))
-        with open(item_save, 'wb') as file:
-            client_box.file(item.id).download_to(file)
-        await ctx.send('download finish')
-
-    await ctx.author.voice.channel.connect()
-    ctx.message.guild.voice_client.play(discord.FFmpegPCMAudio(item_save))
-
-
-@bot.command(help="""再生終了
-""")
-async def stop(ctx):
-    vc = ctx.message.guild.voice_client
-    if vc is None:
-        return
-    await vc.disconnect()
-
-
-@bot.command(aliases=['resume'], help="""一時停止/再開
-""")
-async def pause(ctx):
-    vc = ctx.message.guild.voice_client
-    if vc is None:
-        return
-    if vc.is_playng() and vc.is_paused():
-        vc.resume()
-    elif vc.is_playng() and not vc.is_paused():
-        vc.pause()
-
+bot.add_cog(Picture(bot))
+bot.add_cog(Music(bot))
+bot.add_cog(File(bot))
 
 bot.run(os.environ['DISCORD_TOKEN'])
