@@ -225,7 +225,7 @@ async def pause(ctx):
         return
     if vc.is_playng() and vc.is_paused():
         vc.resume()
-    if vc.is_playng() and not vc.is_paused():
+    elif vc.is_playng() and not vc.is_paused():
         vc.pause()
 
 
