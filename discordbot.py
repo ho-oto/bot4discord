@@ -20,11 +20,13 @@ client_box = boxsdk.Client(
 folder_picture = client_box.folder(os.environ['BOX_DIR_ID_PICTURE'])
 folder_music = client_box.folder(os.environ['BOX_DIR_ID_MUSIC'])
 
-savedir = Path('/tmp')
 uploaddir = Path('/tmp/upload')
+tmppictdir = Path('/tmp/picture')
 tmpmusicdir = Path('/tmp/music')
 if not uploaddir.exists():
     uploaddir.mkdir()
+if not tmppictdir.exists():
+    tmppictdir.mkdir()
 if not tmpmusicdir.exists():
     tmpmusicdir.mkdir()
 
@@ -109,7 +111,7 @@ async def random_all(ctx):
     if len(items) == 0:
         return
     item = choice(items)
-    item_save = str(savedir / item.name)
+    item_save = str(tmppictdir / item.name)
     with open(item_save, 'wb') as file:
         client_box.file(item.id).download_to(file)
     await ctx.send(
@@ -131,7 +133,7 @@ async def _search(ctx, args, which):
             item = choice(items)
         elif which == 's':
             item = items[0]
-        item_save = str(savedir / item.name)
+        item_save = str(tmppictdir / item.name)
         with open(item_save, 'wb') as file:
             client_box.file(item.id).download_to(file)
         await ctx.send(
