@@ -94,16 +94,21 @@ class Music(commands.Cog):
             return
         await vc.disconnect()
 
-    @commands.command(aliases=['resume'], help="""一時停止/再開
+    @commands.command(help="""一時停止
     """)
     async def pause(self, ctx):
         vc = ctx.message.guild.voice_client
         if vc is None:
             return
-        if vc.is_playng() and vc.is_paused():
-            vc.resume()
-        elif vc.is_playng() and not vc.is_paused():
-            vc.pause()
+        vc.pause()
+
+    @commands.command(help="""再開
+    """)
+    async def resume(self, ctx):
+        vc = ctx.message.guild.voice_client
+        if vc is None:
+            return
+        vc.resume()
 
 
 async def random_all(ctx):
