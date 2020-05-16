@@ -19,6 +19,7 @@ client_box = boxsdk.Client(
     ))
 folder_picture = client_box.folder(os.environ['BOX_DIR_ID_PICTURE'])
 folder_music = client_box.folder(os.environ['BOX_DIR_ID_MUSIC'])
+folder_music_upload = client_box.folder(os.environ['BOX_DIR_ID_MUSIC_UPLOAD'])
 
 uploaddir = Path('/tmp/upload')
 tmppictdir = Path('/tmp/picture')
@@ -59,7 +60,7 @@ class Music(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(help="""音楽再生
+    @commands.command(aliases=['play'], help="""（playも可）音楽再生
     """)
     async def music(self, ctx, searchquery):
         if (not ctx.author.voice) or (not ctx.author.voice.channel):
@@ -68,7 +69,7 @@ class Music(commands.Cog):
 
         items = list(client_box.search().query(
             query=searchquery,
-            ancestor_folders=[folder_music],
+            ancestor_folders=[folder_music, folder_music_upload],
             file_extensions=['mp3', 'wmv', 'm4a']
         ))
 
@@ -180,7 +181,7 @@ class File(commands.Cog):
             elif attachment.filename.endswith(('.mp3', '.wmv', '.m4a')):
 
                 await attachment.save(str(uploaddir / attachment.filename))
-                newfile = folder_music.upload(
+                newfile = folder_music_upload.upload(
                     str(uploaddir / attachment.filename)
                 )
                 if newfile.type == 'error':
