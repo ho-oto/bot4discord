@@ -154,7 +154,9 @@ class File(commands.Cog):
 
     @commands.command(help='BoxのURLを表示')
     async def url(self, ctx):
-        await ctx.send('{}'.format(os.environ['BOX_URL']))
+        await ctx.send('view:   {}\nupload: {}'.format(
+            os.environ['BOX_URL'], os.environ['BOX_URL_UPLOAD_PICTURE']
+        ))
 
     @commands.command(help='Boxにアップロード（jpg, jpeg, png, gif, mp3, m4a, wmv）')
     async def upload(self, ctx):
