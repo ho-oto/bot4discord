@@ -34,13 +34,14 @@ if not tmpmusicdir.exists():
 music_suffics = ['mp3', 'm4a', 'wav', 'ac3']
 picture_suffics = ['jpg', 'jpeg', 'JPG', 'JPEG', 'png', 'gif', 'bmp']
 
+
 class Picture(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(aliases=['r', ''], help="""（rのみでも可）ランダム表示
-        検索ワードを付けた場合は検索結果の中からランダム表示
-        コマンド単体の場合はBox全体の中からランダム表示
+    @commands.command(aliases=['r', ''], help="""（`!!r`,`!!`も可）ランダム表示
+        引数で検索して結果の中からランダム表示
+        引数無しの場合はBox全体の中からランダム表示
     """)
     async def random(self, ctx, *args):
         if len(args) == 0:
@@ -48,8 +49,8 @@ class Picture(commands.Cog):
         else:
             await _search(ctx, args, which='r')
 
-    @commands.command(aliases=['s', 'p'], help="""（sまたはpのみでも可）検索表示
-        与えられた引数で検索して最上位の画像を表示
+    @commands.command(aliases=['s', 'p'], help="""（`!!s`,`!!p`も可）検索表示
+        引数で検索して最上位の画像を表示
     """)
     async def search(self, ctx, *args):
         if len(args) == 0:
@@ -62,9 +63,9 @@ class Music(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(aliases=['play'], help="""（playも可）音楽再生
+    @commands.command(help="""検索して音楽再生
     """)
-    async def music(self, ctx, searchquery):
+    async def play(self, ctx, searchquery):
         if (not ctx.author.voice) or (not ctx.author.voice.channel):
             await ctx.send('please connect to voice channel')
             return
@@ -72,7 +73,7 @@ class Music(commands.Cog):
         items = list(client_box.search().query(
             query=searchquery,
             ancestor_folders=[folder_music, folder_music_upload],
-            file_extensions=['mp3', 'wmv', 'm4a']
+            file_extensions=music_suffics
         ))
 
         if len(items) == 0:
@@ -133,7 +134,7 @@ async def _search(ctx, args, which):
         items = list(client_box.search().query(
             query=search_query,
             ancestor_folders=[folder_picture],
-            file_extensions=['jpg', 'jpeg', 'png', 'gif']
+            file_extensions=picture_suffics
         ))
         if len(items) == 0:
             continue
@@ -160,7 +161,7 @@ class File(commands.Cog):
             os.environ['BOX_URL'], os.environ['BOX_URL_UPLOAD_PICTURE']
         ))
 
-    @commands.command(help='Boxにアップロード（jpg, jpeg, png, gif ）')
+    @commands.command(help='Boxにアップロード（jpg, jpeg, png, gif）')
     async def upload(self, ctx):
         for attachment in ctx.message.attachments:
             if attachment.filename.endswith(tuple(picture_suffics)) and\
@@ -168,22 +169,6 @@ class File(commands.Cog):
 
                 await attachment.save(str(uploaddir / attachment.filename))
                 newfile = folder_picture.upload(
-                    str(uploaddir / attachment.filename)
-                )
-                if newfile.type == 'error':
-                    await ctx.send(
-                        'failed to upload {}'.format(attachment.filename)
-                    )
-                else:
-                    await ctx.send(
-                        '{} was uploaded (file_id = {})'.format(
-                            newfile.name, newfile.id
-                        ))
-
-            elif attachment.filename.endswith(('.mp3', '.wmv', '.m4a')):
-
-                await attachment.save(str(uploaddir / attachment.filename))
-                newfile = folder_music_upload.upload(
                     str(uploaddir / attachment.filename)
                 )
                 if newfile.type == 'error':
