@@ -31,6 +31,8 @@ if not tmppictdir.exists():
 if not tmpmusicdir.exists():
     tmpmusicdir.mkdir()
 
+music_suffics = ['mp3', 'm4a', 'wav', 'ac3']
+picture_suffics = ['jpg', 'jpeg', 'JPG', 'JPEG', 'png', 'gif', 'bmp']
 
 class Picture(commands.Cog):
     def __init__(self, bot):
@@ -158,13 +160,11 @@ class File(commands.Cog):
             os.environ['BOX_URL'], os.environ['BOX_URL_UPLOAD_PICTURE']
         ))
 
-    @commands.command(help='Boxにアップロード（jpg, jpeg, png, gif, mp3, m4a, wmv）')
+    @commands.command(help='Boxにアップロード（jpg, jpeg, png, gif ）')
     async def upload(self, ctx):
         for attachment in ctx.message.attachments:
-            if attachment.filename.endswith(
-                ('.jpg', '.jpeg', '.png', '.gif',
-                 '.JPG', '.JPEG', '.PNG', '.GIF')
-            ) and attachment.size < 10485760:
+            if attachment.filename.endswith(tuple(picture_suffics)) and\
+                    attachment.size < 10485760:
 
                 await attachment.save(str(uploaddir / attachment.filename))
                 newfile = folder_picture.upload(
