@@ -40,18 +40,52 @@ class Picture(commands.Cog):
     """)
     async def random(self, ctx, *args):
         if len(args) == 0:
-            await random_all(ctx)
+            await self._random_all(ctx)
         else:
-            await _search(ctx, args, which='r')
+            await self._search(ctx, args, which='r')
 
     @commands.command(aliases=['s', 'p'], help="""（`!!s`,`!!p`も可）検索表示
         引数で検索して最上位の画像を表示
     """)
     async def search(self, ctx, *args):
         if len(args) == 0:
-            await random_all(ctx)
+            await self._random_all(ctx)
         else:
-            await _search(ctx, args, which='s')
+            await self._search(ctx, args, which='s')
+
+    async def _random_all(self, ctx):
+        items = list(folder_picture.get_items())
+        if len(items) == 0:
+            return
+        item = choice(items)
+        item_save = str(download_dir / item.name)
+        with open(item_save, 'wb') as file:
+            client_box.file(item.id).download_to(file)
+        await ctx.send(
+            '**name = {}** (id = {})'.format(item.name, item.id),
+            file=discord.File(item_save)
+        )
+
+    async def _search(self, ctx, args, which):
+        for search_query in args:
+            items = list(client_box.search().query(
+                query=search_query,
+                ancestor_folders=[folder_picture],
+                file_extensions=picture_suffics
+            ))
+            if len(items) == 0:
+                continue
+            if which == 'r':
+                item = choice(items)
+            elif which == 's':
+                item = items[0]
+            item_save = str(download_dir / item.name)
+            with open(item_save, 'wb') as file:
+                client_box.file(item.id).download_to(file)
+            await ctx.send(
+                '**name = {}** (id = {})'.format(item.name, item.id),
+                file=discord.File(item_save)
+            )
 
 
 class Music(commands.Cog):
@@ -108,42 +142,6 @@ class Music(commands.Cog):
         if vc is None:
             return
         vc.resume()
-
-
-async def random_all(ctx):
-    items = list(folder_picture.get_items())
-    if len(items) == 0:
-        return
-    item = choice(items)
-    item_save = str(download_dir / item.name)
-    with open(item_save, 'wb') as file:
-        client_box.file(item.id).download_to(file)
-    await ctx.send(
-        '**name = {}** (id = {})'.format(item.name, item.id),
-        file=discord.File(item_save)
-    )
-
-
-async def _search(ctx, args, which):
-    for search_query in args:
-        items = list(client_box.search().query(
-            query=search_query,
-            ancestor_folders=[folder_picture],
-            file_extensions=picture_suffics
-        ))
-        if len(items) == 0:
-            continue
-        if which == 'r':
-            item = choice(items)
-        elif which == 's':
-            item = items[0]
-        item_save = str(download_dir / item.name)
-        with open(item_save, 'wb') as file:
-            client_box.file(item.id).download_to(file)
-        await ctx.send(
-            '**name = {}** (id = {})'.format(item.name, item.id),
-            file=discord.File(item_save)
-        )
 
 
 class File(commands.Cog):
