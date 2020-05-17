@@ -116,7 +116,9 @@ class Music(commands.Cog):
                 client_box.file(item.id).download_to(file)
             await ctx.send('download finish')
 
-        await ctx.author.voice.channel.connect()
+        if ctx.message.guild.voice_client is None:
+            await ctx.author.voice.channel.connect()
+
         ctx.message.guild.voice_client.play(discord.FFmpegPCMAudio(item_save))
 
     @commands.command(help="""再生終了
