@@ -21,15 +21,10 @@ folder_picture = client_box.folder(os.environ['BOX_DIR_ID_PICTURE'])
 folder_music = client_box.folder(os.environ['BOX_DIR_ID_MUSIC'])
 folder_music_upload = client_box.folder(os.environ['BOX_DIR_ID_MUSIC_UPLOAD'])
 
-uploaddir = Path('/tmp/upload')
-tmppictdir = Path('/tmp/picture')
-tmpmusicdir = Path('/tmp/music')
-if not uploaddir.exists():
-    uploaddir.mkdir()
-if not tmppictdir.exists():
-    tmppictdir.mkdir()
-if not tmpmusicdir.exists():
-    tmpmusicdir.mkdir()
+download_dir = Path('/tmp')
+upload_dir = Path('/tmp/upload')
+if not upload_dir.exists():
+    upload_dir.mkdir()
 
 music_suffics = ['mp3', 'm4a', 'wav', 'ac3']
 picture_suffics = ['jpg', 'jpeg', 'JPG', 'JPEG', 'png', 'gif', 'bmp']
@@ -81,7 +76,7 @@ class Music(commands.Cog):
             return
         else:
             item = items[0]
-            item_save = str(tmpmusicdir / item.name)
+            item_save = str(download_dir / item.name)
             await ctx.send('download {}'.format(item.name))
             with open(item_save, 'wb') as file:
                 client_box.file(item.id).download_to(file)
@@ -120,7 +115,7 @@ async def random_all(ctx):
     if len(items) == 0:
         return
     item = choice(items)
-    item_save = str(tmppictdir / item.name)
+    item_save = str(download_dir / item.name)
     with open(item_save, 'wb') as file:
         client_box.file(item.id).download_to(file)
     await ctx.send(
@@ -142,7 +137,7 @@ async def _search(ctx, args, which):
             item = choice(items)
         elif which == 's':
             item = items[0]
-        item_save = str(tmppictdir / item.name)
+        item_save = str(download_dir / item.name)
         with open(item_save, 'wb') as file:
             client_box.file(item.id).download_to(file)
         await ctx.send(
@@ -167,9 +162,9 @@ class File(commands.Cog):
             if attachment.filename.endswith(tuple(picture_suffics)) and\
                     attachment.size < 10485760:
 
-                await attachment.save(str(uploaddir / attachment.filename))
+                await attachment.save(str(upload_dir / attachment.filename))
                 newfile = folder_picture.upload(
-                    str(uploaddir / attachment.filename)
+                    str(upload_dir / attachment.filename)
                 )
                 if newfile.type == 'error':
                     await ctx.send(
