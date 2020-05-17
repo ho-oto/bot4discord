@@ -244,7 +244,7 @@ class File(commands.Cog):
             await ctx.send(s)
 
 
-bot = commands.Bot(command_prefix=['!!!', '!!'], case_insensitive=True)
+bot = commands.Bot(command_prefix=['!!'], case_insensitive=True)
 
 bot.add_cog(Picture(bot))
 bot.add_cog(Music(bot))
